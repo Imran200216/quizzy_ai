@@ -9,6 +9,7 @@ class QuizAnswerDetailsScreen extends StatelessWidget {
     // Open the Hive box
     final box = Hive.box('dartQuestions');
     final quizData = box.get('quizData');
+    final userAnswersBox = Hive.box('userAnswers');
 
     return Scaffold(
       appBar: AppBar(
@@ -27,6 +28,14 @@ class QuizAnswerDetailsScreen extends StatelessWidget {
               itemBuilder: (context, index) {
                 final questionData = quizData[index];
                 final options = questionData['options'] as List;
+
+                /// for taking user answers
+                // Retrieve user-selected answer
+                final questionKey = 'question_${index + 1}';
+                final userAnswer = userAnswersBox.get(questionKey);
+                final userSelectedAnswer =
+                    userAnswer?['selectedAnswer'] ?? 'N/A';
+                final isCorrect = userAnswer?['isCorrect'] ?? false;
 
                 return Card(
                   margin: EdgeInsets.only(bottom: 16.0),
@@ -79,6 +88,25 @@ class QuizAnswerDetailsScreen extends StatelessWidget {
                         Text(
                           questionData['explanation'],
                           style: TextStyle(fontSize: 16),
+                        ),
+                        SizedBox(height: 10),
+
+                        /// user choose answer title
+                        Text(
+                          'User choose answer:',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+
+                        /// user choose answer
+                        Text(
+                          userSelectedAnswer,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: isCorrect ? Colors.green : Colors.red,
+                          ),
                         ),
                       ],
                     ),

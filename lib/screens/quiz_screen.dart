@@ -13,20 +13,21 @@ class QuizScreen extends StatefulWidget {
 
 class _QuizScreenState extends State<QuizScreen> {
   late Future<Quiz> quizData;
-  int currentQuestionIndex = 0; // Track the current question index
-  String? selectedOption; // Track the selected option
-  bool showExplanation = false; // Control whether to show explanation
+  int currentQuestionIndex = 0;
+  String? selectedOption;
+  bool showExplanation = false;
 
   @override
   void initState() {
     super.initState();
-    quizData = fetchQuizData(); // Simulating API call
+    quizData = fetchQuizData();
+    Hive.openBox('userAnswers'); // Open the userAnswers Hive box
   }
 
-  void checkAnswer(String selected, String correct) {
+  void checkAnswer(String selected, String correct) async {
     setState(() {
       selectedOption = selected;
-      showExplanation = true; // Show explanation
+      showExplanation = true;
 
       if (selected == correct) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -44,14 +45,22 @@ class _QuizScreenState extends State<QuizScreen> {
         );
       }
     });
+
+    // Save the selected answer in Hive
+    final box = Hive.box('userAnswers');
+    final questionKey = 'question_${currentQuestionIndex + 1}';
+    await box.put(questionKey, {
+      'selectedAnswer': selected,
+      'isCorrect': selected == correct,
+    });
   }
 
   void nextQuestion(Quiz quiz) {
     setState(() {
       if (currentQuestionIndex < quiz.questions.length - 1) {
         currentQuestionIndex++;
-        selectedOption = null; // Reset selection
-        showExplanation = false; // Hide explanation
+        selectedOption = null;
+        showExplanation = false;
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('You have completed the quiz!')),
@@ -86,7 +95,6 @@ class _QuizScreenState extends State<QuizScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  /// questions nos
                   Text(
                     "Question ${currentQuestionIndex + 1} of ${quiz.questions.length}",
                     style: TextStyle(
@@ -95,8 +103,6 @@ class _QuizScreenState extends State<QuizScreen> {
                     ),
                   ),
                   SizedBox(height: 20),
-
-                  /// questions
                   Text(
                     question.question,
                     style: TextStyle(
@@ -127,8 +133,6 @@ class _QuizScreenState extends State<QuizScreen> {
                   if (showExplanation) ...[
                     SizedBox(height: 20),
                     Text("Explanation:"),
-
-                    /// question explanation
                     Text(
                       question.explanation,
                       style: TextStyle(
@@ -139,24 +143,19 @@ class _QuizScreenState extends State<QuizScreen> {
                     ),
                   ],
                   Spacer(),
-
-                  /// next btn or show question details
                   if (currentQuestionIndex < quiz.questions.length - 1)
-
-                    /// next btn for moving to the next screen
                     ElevatedButton(
                       onPressed:
                           showExplanation ? () => nextQuestion(quiz) : null,
                       child: Text('Next'),
                     )
                   else
-
-                    /// show btn to showcase the question and answers
                     ElevatedButton(
                       onPressed: () async {
                         final box = Hive.box('dartQuestions');
+                        final userBox = Hive.box('userAnswers');
 
-                        // Prepare data to store in Hive
+                        // Prepare quiz data
                         final quizData = quiz.questions.map((question) {
                           return {
                             'question': question.question,
@@ -166,7 +165,6 @@ class _QuizScreenState extends State<QuizScreen> {
                           };
                         }).toList();
 
-                        // Store data in Hive
                         await box.put('quizData', quizData);
 
                         ScaffoldMessenger.of(context).showSnackBar(

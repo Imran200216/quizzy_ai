@@ -5,11 +5,15 @@ import 'package:quizzy_ai/screens/quiz_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   /// hive db set up
   await Hive.initFlutter();
 
   /// hive box name or db name
   await Hive.openBox('dartQuestions');
+
+  /// hive box user answers
+  await Hive.openBox('userAnswered');
 
   runApp(const MyApp());
 }
